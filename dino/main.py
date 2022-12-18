@@ -12,19 +12,19 @@ score = 0
 game_over_score = 0
 
 # intro surfaces
-background = pygame.image.load('dino game/sky.png').convert()
+background = pygame.image.load('images/sky.png').convert()
 background = pygame.transform.scale(background, (1280, 720))
-dino_stand = pygame.image.load('dino game/1-night.png').convert_alpha()
+dino_stand = pygame.image.load('images/1-night.png').convert_alpha()
 dino_stand_rectangle = dino_stand.get_rect(center=(640, 350))
 game_title = font.render('DINO', False, 'Black')
 game_title_rectangle = game_title.get_rect(center=(640, 175))
 
 # surfaces && rectangles
-ground_surface = pygame.image.load('dino game/ground.png').convert()
-sky_surface = pygame.image.load('dino game/sky.png').convert()
+ground_surface = pygame.image.load('images/ground.png').convert()
+sky_surface = pygame.image.load('images/sky.png').convert()
 
 # clouds
-cloud_surface = pygame.image.load('dino game/cloud.xcf').convert_alpha()
+cloud_surface = pygame.image.load('images/cloud.xcf').convert_alpha()
 cloud_rectangle = cloud_surface.get_rect()
 
 obstacle_rect_list = []
@@ -36,15 +36,15 @@ text_outro = font.render('Press SPACE to PLAY', False, 'Black')
 text_outro_rectangle = text_outro.get_rect(center=(640, 500))
 
 # dino
-dino_run1 = pygame.image.load('dino game/dino_run1.xcf').convert_alpha()
-dino_run2 = pygame.image.load('dino game/dino_run2.xcf').convert_alpha()
+dino_run1 = pygame.image.load('images/dino_run1.xcf').convert_alpha()
+dino_run2 = pygame.image.load('images/dino_run2.xcf').convert_alpha()
 dino_run = [dino_run1, dino_run2]
 dino_index = 0
 dino_surface = dino_run[dino_index]
 dino_rectangle = dino_surface.get_rect(midbottom=(100, 525))
 dino_gravity = 0
 
-cactus_surface = pygame.image.load('dino game/4-green.png').convert_alpha()
+cactus_surface = pygame.image.load('images/4-green.png').convert_alpha()
 
 game_active = False
 
@@ -184,5 +184,7 @@ while True:
         screen.blit(text_outro, text_outro_rectangle)
 
     pygame.display.update()
+
+    clock.tick(60)
 
     clock.tick(60)
