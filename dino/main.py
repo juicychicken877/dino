@@ -181,6 +181,8 @@ while True:
                 game_active = True
                 score = 0
                 game_over_score = 0
+                # stop playing game over sound and play music
+                pygame.mixer.stop() 
                 background_music.play(loops=-1)
 
         if event.type == obstacle_timer and game_active:
