@@ -163,7 +163,7 @@ def collision_sprite():
     if not pygame.sprite.spritecollide(dino.sprite, obstacle_group, False):
         return True
     else:
-        background_music.stop()
+        pygame.mixer.stop()
         game_over.play()
         obstacle_group.empty()
         return False
