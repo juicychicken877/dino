@@ -17,7 +17,7 @@ class Dino(pygame.sprite.Sprite):
         self.frame_index = 0
 
         self.jump_sound = pygame.mixer.Sound('sounds/jump_mario.wav')
-        # self.jump_sound.set_volume(0.25)
+        self.jump_sound.set_volume(0.5)
 
         self.image = self.frames[self.frame_index]
         self.rect = self.image.get_rect(midbottom=(100, 525))
@@ -119,7 +119,7 @@ pygame.time.set_timer(cloud_timer, 1000)
 
 # music
 background_music = pygame.mixer.Sound('music/background_mario.mp3')
-# background_music.set_volume(0.25)
+background_music.set_volume(0.25)
 # sounds
 game_over = pygame.mixer.Sound('sounds/die.wav')
 # sprite groups
@@ -182,7 +182,7 @@ while True:
                 score = 0
                 game_over_score = 0
                 # stop playing game over sound and play music
-                pygame.mixer.stop() 
+                pygame.mixer.stop()
                 background_music.play(loops=-1)
 
         if event.type == obstacle_timer and game_active:
