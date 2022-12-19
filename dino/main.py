@@ -1,15 +1,93 @@
 import pygame
 from sys import exit
-from random import randint
+from random import randint, choice
+
+score = 0
+game_over_score = 0
+game_active = False
+
+
+class Dino(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        run1 = pygame.image.load('images/dino_run1.xcf').convert_alpha()
+        run2 = pygame.image.load('images/dino_run2.xcf').convert_alpha()
+        self.stand = pygame.image.load('images/1-night.png').convert_alpha()
+        self.frames = [run1, run2]
+        self.frame_index = 0
+
+        self.jump_sound = pygame.mixer.Sound('sounds/jump_mario.wav')
+        # self.jump_sound.set_volume(0.25)
+
+        self.image = self.frames[self.frame_index]
+        self.rect = self.image.get_rect(midbottom=(100, 525))
+
+        self.gravity = 0
+
+    def player_input(self):
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_SPACE] and self.rect.bottom == 525:
+            self.gravity = -22
+            self.jump_sound.play()
+
+    def apply_gravity(self):
+        self.gravity += 1
+        self.rect.y += self.gravity
+
+        if self.rect.bottom >= 525:
+            self.rect.bottom = 525
+
+    def animate_run(self):
+
+        if self.rect.bottom < 525:
+            self.image = self.stand
+        else:
+            self.frame_index += 0.2
+            if self.frame_index >= len(self.frames):
+                self.frame_index = 0
+            self.image = self.frames[int(self.frame_index)]
+
+    def update(self):
+        self.player_input()
+        self.apply_gravity()
+        self.animate_run()
+
+
+class Obstacles(pygame.sprite.Sprite):
+    def __init__(self, type):
+        super().__init__()
+
+        if type == 'Cactus':
+            self.image = pygame.image.load('images/4-green.png').convert_alpha()
+            y_position = 525
+            self.speed = 10
+        else:
+            self.image = pygame.image.load('images/bird.xcf').convert_alpha()
+            y_position = 375
+            self.speed = 10
+
+        self.rect = self.image.get_rect(midbottom=(randint(1400, 1600), y_position))
+
+    def update(self):
+        self.destroy()
+        self.rect.x -= self.speed
+
+    def destroy(self):
+        # variables that I use to show score
+        global score, game_over_score
+
+        if self.rect.x <= -100:
+            score += 1
+            game_over_score += 1
+            self.kill()
+
 
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
 pygame.display.set_caption('Dino')
 font = pygame.font.Font('font/font.ttf', 100)
 clock = pygame.time.Clock()
-
-score = 0
-game_over_score = 0
 
 # intro surfaces
 background = pygame.image.load('images/sky.png').convert()
@@ -19,15 +97,13 @@ dino_stand_rectangle = dino_stand.get_rect(center=(640, 350))
 game_title = font.render('DINO', False, 'Black')
 game_title_rectangle = game_title.get_rect(center=(640, 175))
 
-# surfaces && rectangles
+# background
 ground_surface = pygame.image.load('images/ground.png').convert()
 sky_surface = pygame.image.load('images/sky.png').convert()
 
 # clouds
 cloud_surface = pygame.image.load('images/cloud.xcf').convert_alpha()
 cloud_rectangle = cloud_surface.get_rect()
-
-obstacle_rect_list = []
 cloud_rect_list = []
 
 text_surface = font.render('GAME OVER', False, 'Black').convert()
@@ -35,30 +111,27 @@ text_rectangle = text_surface.get_rect(center=(640, 150))
 text_outro = font.render('Press SPACE to PLAY', False, 'Black')
 text_outro_rectangle = text_outro.get_rect(center=(640, 500))
 
-# dino
-dino_run1 = pygame.image.load('images/dino_run1.xcf').convert_alpha()
-dino_run2 = pygame.image.load('images/dino_run2.xcf').convert_alpha()
-dino_run = [dino_run1, dino_run2]
-dino_index = 0
-dino_surface = dino_run[dino_index]
-dino_rectangle = dino_surface.get_rect(midbottom=(100, 525))
-dino_gravity = 0
-
-cactus_surface = pygame.image.load('images/4-green.png').convert_alpha()
-
-game_active = False
-
 # timer
 obstacle_timer = pygame.USEREVENT + 1
 pygame.time.set_timer(obstacle_timer, 1700)
 cloud_timer = pygame.USEREVENT + 1
 pygame.time.set_timer(cloud_timer, 1000)
 
+# music
+background_music = pygame.mixer.Sound('music/background_mario.mp3')
+# background_music.set_volume(0.25)
+# sounds
+game_over = pygame.mixer.Sound('sounds/die.wav')
+# sprite groups
+dino = pygame.sprite.GroupSingle()
+dino.add(Dino())
+obstacle_group = pygame.sprite.Group()
+
 
 def cloud_generator(cloud_list):
     if cloud_list:
         for cloud_rect in cloud_list:
-            cloud_rect.x -= 5
+            cloud_rect.x -= 2
 
             screen.blit(cloud_surface, cloud_rect)
 
@@ -67,13 +140,17 @@ def cloud_generator(cloud_list):
         return cloud_list
 
     else:
-        return[]
+        return []
 
 
 def show_intro():
     screen.blit(background, (0, 0))
     screen.blit(dino_stand, dino_stand_rectangle)
     screen.blit(game_title, game_title_rectangle)
+    game_over_score_surface = font.render(f'Your Score: {game_over_score}', False, 'Black')
+    game_over_score_rectangle = game_over_score_surface.get_rect(center=(640, 600))
+    screen.blit(game_over_score_surface, game_over_score_rectangle)
+    screen.blit(text_outro, text_outro_rectangle)
 
 
 def show_score():
@@ -82,51 +159,14 @@ def show_score():
     screen.blit(score_surface, score_rectangle)
 
 
-def obstacle_movement(obstacle_list):
-    global score, game_over_score
-
-    if obstacle_list:
-        for obstacle_rect in obstacle_list:
-            obstacle_rect.x -= 10
-
-            if obstacle_rect.x <= -100:
-                score += 1
-
-            # depending on y draw a proper image
-
-            screen.blit(cactus_surface, obstacle_rect)
-
-        obstacle_list = [obstacle for obstacle in obstacle_list if obstacle.x > -100]
-
-        return obstacle_list
-
+def collision_sprite():
+    if not pygame.sprite.spritecollide(dino.sprite, obstacle_group, False):
+        return True
     else:
-        return[]
-
-
-def isCollision(dino, obstacles):
-    global score, game_over_score
-    if obstacles:
-        for obstacle_rect in obstacles:
-            if dino.colliderect(obstacle_rect):
-                game_over_score = score
-                score = 0
-                return False
-
-    return True
-
-
-def dino_animate():
-    global dino_surface, dino_index
-
-    if dino_rectangle.bottom < 525:
-        pass
-
-    else:
-        dino_index += 0.2
-        if dino_index >= len(dino_run):
-            dino_index = 0
-        dino_surface = dino_run[int(dino_index)]
+        background_music.stop()
+        game_over.play()
+        obstacle_group.empty()
+        return False
 
 
 while True:
@@ -137,17 +177,14 @@ while True:
             exit()
 
         if event.type == pygame.KEYDOWN:
-            # the player can only jump if he is on the ground
-            if event.key == pygame.K_SPACE and dino_rectangle.bottom == 525:
-                dino_gravity = -22
             if event.key == pygame.K_SPACE and not game_active:
                 game_active = True
-                dino_rectangle.bottom = 525
-                dino_gravity = 0
-                obstacle_rect_list.clear()
+                score = 0
+                game_over_score = 0
+                background_music.play(loops=-1)
 
         if event.type == obstacle_timer and game_active:
-            obstacle_rect_list.append(cactus_surface.get_rect(bottomright=(randint(1400, 1600), 525)))
+            obstacle_group.add(Obstacles(choice(['Cactus', 'Cactus', 'Cactus', 'Bird'])))
 
         if event.type == cloud_timer:
             cloud_rect_list.append(cloud_surface.get_rect(bottomright=(randint(1400, 1600), randint(75, 125))))
@@ -155,22 +192,19 @@ while True:
     if game_active:
         screen.blit(sky_surface, (0, 0))
         screen.blit(ground_surface, (0, 520))
-        screen.blit(dino_surface, dino_rectangle)
 
-        # players' gravity
-        dino_rectangle.y += dino_gravity
-        dino_gravity += 1
-        if dino_rectangle.bottom > 525:
-            dino_rectangle.bottom = 525
+        # draw sprites
+        dino.draw(screen)
+        dino.update()
 
-        dino_animate()
+        obstacle_group.draw(screen)
+        obstacle_group.update()
 
-        # cactus / fly movement
-        obstacle_rect_list = obstacle_movement(obstacle_rect_list)
+        # cloud movement
         cloud_rect_list = cloud_generator(cloud_rect_list)
 
-        # if collision then game_active == false (game stops)
-        game_active = isCollision(dino_rectangle, obstacle_rect_list)
+        # if there is no collision continue
+        game_active = collision_sprite()
 
         show_score()
 
@@ -178,13 +212,7 @@ while True:
         show_intro()
 
         cloud_rect_list = cloud_generator(cloud_rect_list)
-        game_over_score_surface = font.render(f'Your Score: {game_over_score}', False, 'Black')
-        game_over_score_rectangle = game_over_score_surface.get_rect(center=(640, 600))
-        screen.blit(game_over_score_surface, game_over_score_rectangle)
-        screen.blit(text_outro, text_outro_rectangle)
 
     pygame.display.update()
-
-    clock.tick(60)
 
     clock.tick(60)
